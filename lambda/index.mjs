@@ -1,8 +1,12 @@
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
 const s3 = new S3Client({ region: process.env.S3_REGION });
+const ses = new SESClient({ region: process.env.S3_REGION });
 const BUCKET = process.env.BUCKET_NAME;
 const DIST_PREFIX = process.env.DIST_PREFIX;
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL || "aiuc@purestorage.com";
+const SENDER_EMAIL = process.env.SENDER_EMAIL || "aiuc@purestorage.com";
 
 /**
  * MIME type mapping for static assets
@@ -101,6 +105,53 @@ export async function handler(event) {
     }
     if (path === "/api/data/industry" || path === "/api/data/industry/") {
         return getS3Object("industry_use_cases.json", "application/json");
+    }
+
+    // --- Contact API route ---
+    if ((path === "/api/contact" || path === "/api/contact/") && method === "POST") {
+        try {
+            const body = JSON.parse(event.body || "{}");
+            const { from, subject, message } = body;
+
+            if (!from || !subject || !message) {
+                return {
+                    statusCode: 400,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ error: "Missing required fields: from, subject, message" }),
+                };
+            }
+
+            const command = new SendEmailCommand({
+                Source: SENDER_EMAIL,
+                Destination: {
+                    ToAddresses: [CONTACT_EMAIL],
+                },
+                Message: {
+                    Subject: { Data: subject },
+                    Body: {
+                        Text: {
+                            Data: `From: ${from}\n\n${message}`,
+                        },
+                    },
+                },
+                ReplyToAddresses: [from],
+            });
+
+            await ses.send(command);
+
+            return {
+                statusCode: 200,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ success: true, message: "Email sent successfully" }),
+            };
+        } catch (err) {
+            console.error("Contact email error:", err);
+            return {
+                statusCode: 500,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ error: "Failed to send email" }),
+            };
+        }
     }
 
     // --- Static file serving ---

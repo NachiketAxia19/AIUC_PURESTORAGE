@@ -5,18 +5,24 @@ import {
   Tabs,
   Tab,
   CssBaseline,
+  Link,
 } from "@mui/material";
 import { ThemeProvider } from "@mui/material/styles";
+import EmailIcon from "@mui/icons-material/Email";
 import Logo from "./components/Logo";
 import UseCaseTable from "./components/UseCaseTable";
 import IndustryDataTable from "./components/IndustryDataTable";
 import { theme, PURE_ORANGE } from "./theme";
 import { useS3Data } from "./hooks/useS3Data";
+import { useOktaUser } from "./hooks/useOktaUser";
 import "./globals.css";
 
 function App() {
   // Tab State
   const [activeTab, setActiveTab] = useState(0);
+
+  // Okta user info
+  const { userName, userEmail, isAuthenticated, isLoading: oktaLoading } = useOktaUser();
 
   // Use custom hook for data
   const {
@@ -83,8 +89,35 @@ function App() {
               </Typography>
             </Box>
 
-            {/* Action Box (Empty to maintain center alignment) */}
-            <Box sx={{ width: 100 }} />
+            {/* User Greeting */}
+            <Box sx={{ minWidth: 180, display: "flex", justifyContent: "flex-end" }}>
+              {oktaLoading ? (
+                <Typography
+                  variant="body2"
+                  sx={{ color: "#999", fontSize: "0.875rem" }}
+                >
+                  Loading...
+                </Typography>
+              ) : isAuthenticated ? (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#1a1a1a",
+                    fontWeight: 500,
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  Hello, <strong>{userName}</strong>
+                </Typography>
+              ) : (
+                <Typography
+                  variant="body2"
+                  sx={{ color: "#999", fontSize: "0.875rem" }}
+                >
+                  Not signed in
+                </Typography>
+              )}
+            </Box>
           </Box>
         </Box>
 
@@ -121,6 +154,7 @@ function App() {
               data={useCaseData}
               loading={loadingUseCase}
               error={errorUseCase}
+              userEmail={userEmail}
             />
           )}
           {activeTab === 1 && (
@@ -128,6 +162,7 @@ function App() {
               data={industryData}
               loading={loadingIndustry}
               error={errorIndustry}
+              userEmail={userEmail}
             />
           )}
         </Box>
@@ -165,8 +200,8 @@ function App() {
             />
           </Box>
 
-          {/* Center - Confidential */}
-          <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
+          {/* Center - Confidential + Contact */}
+          <Box sx={{ flex: 1, display: "flex", justifyContent: "center", gap: 3, alignItems: "center" }}>
             <Typography
               variant="body2"
               sx={{
@@ -177,6 +212,22 @@ function App() {
             >
               Confidential - Internal Use Only
             </Typography>
+            <Link
+              href="mailto:aiuc@purestorage.com"
+              underline="hover"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                color: PURE_ORANGE,
+                fontSize: "0.75rem",
+                fontWeight: 500,
+                "&:hover": { color: "#cc4000" },
+              }}
+            >
+              <EmailIcon sx={{ fontSize: 14 }} />
+              Contact Us
+            </Link>
           </Box>
 
           {/* Right side - Row count */}

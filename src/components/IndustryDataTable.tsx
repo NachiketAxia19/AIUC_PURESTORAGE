@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from "react";
-// No unused React components needed here
 import {
   useReactTable,
   getCoreRowModel,
@@ -37,6 +36,7 @@ import {
   InputAdornment,
   Divider,
   Paper,
+  Tooltip,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import SearchIcon from "@mui/icons-material/Search";
@@ -44,8 +44,10 @@ import ClearIcon from "@mui/icons-material/Clear";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import type { IndustryData } from "../types";
 import { parseChipItems } from "../utils";
+import ContactDialog from "./ContactDialog";
 
 const PURE_ORANGE = "#fe5000";
 
@@ -59,17 +61,23 @@ interface IndustryDataTableProps {
   data: IndustryData[];
   loading: boolean;
   error: string | null;
+  userEmail: string;
 }
 
 export default function IndustryDataTable({
   data,
   loading,
   error,
+  userEmail,
 }: IndustryDataTableProps) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
   const [globalFilter, setGlobalFilter] = useState("");
+
+  // Contact dialog state
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [contactSubject, setContactSubject] = useState("");
 
   // Filter state
   type FilterState = {
@@ -336,6 +344,11 @@ export default function IndustryDataTable({
   );
 
 
+  const handleContactClick = useCallback((aiUseCase: string, industry: string) => {
+    setContactSubject(`Interest in: ${aiUseCase} (${industry})`);
+    setContactDialogOpen(true);
+  }, []);
+
   const columns = useMemo<ColumnDef<IndustryData>[]>(
     () => [
       {
@@ -367,6 +380,39 @@ export default function IndustryDataTable({
           />
         ),
         size: 50,
+      },
+      {
+        id: "contact",
+        header: () => (
+          <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "0.8rem" }}>
+            Contact
+          </Typography>
+        ),
+        cell: ({ row }) => (
+          <Tooltip title="I'm interested — contact me" arrow>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleContactClick(
+                  row.original["AI Use Case"],
+                  row.original.Industry
+                );
+              }}
+              sx={{
+                color: PURE_ORANGE,
+                "&:hover": {
+                  backgroundColor: "#fff5f2",
+                  transform: "scale(1.1)",
+                },
+                transition: "all 0.2s ease",
+              }}
+            >
+              <MailOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        ),
+        size: 100,
       },
       // Define Industry Data Columns
       {
@@ -761,7 +807,7 @@ export default function IndustryDataTable({
         },
       },
     ],
-    [expandedRows, CustomHeader, renderChips, toggleRowExpansion, filters]
+    [expandedRows, CustomHeader, renderChips, toggleRowExpansion, filters, handleContactClick]
   );
 
   const table = useReactTable({
@@ -1051,6 +1097,12 @@ export default function IndustryDataTable({
         multiselectColumns={multiselectColumns}
         getUniqueValues={getUniqueValues}
         tableContainerRef={tableContainerRef}
+      />
+      <ContactDialog
+        open={contactDialogOpen}
+        onClose={() => setContactDialogOpen(false)}
+        userEmail={userEmail}
+        subject={contactSubject}
       />
     </Box>
   );

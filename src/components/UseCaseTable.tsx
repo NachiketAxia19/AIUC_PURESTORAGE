@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from "react";
-// No unused React components needed here
 import {
   useReactTable,
   getCoreRowModel,
@@ -37,14 +36,17 @@ import {
   InputAdornment,
   Divider,
   Paper,
+  Tooltip,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import type { UseCaseData } from "../types";
 import { parseChipItems } from "../utils";
+import ContactDialog from "./ContactDialog";
 
 const PURE_ORANGE = "#fe5000";
 
@@ -58,17 +60,23 @@ interface UseCaseTableProps {
   data: UseCaseData[];
   loading: boolean;
   error: string | null;
+  userEmail: string;
 }
 
 export default function UseCaseTable({
   data,
   loading,
   error,
+  userEmail,
 }: UseCaseTableProps) {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
   const [globalFilter, setGlobalFilter] = useState("");
+
+  // Contact dialog state
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [contactSubject, setContactSubject] = useState("");
 
   // Filter state
   type FilterState = {
@@ -346,6 +354,11 @@ export default function UseCaseTable({
   );
 
 
+  const handleContactClick = useCallback((aiUseCase: string) => {
+    setContactSubject(`Interest in: ${aiUseCase}`);
+    setContactDialogOpen(true);
+  }, []);
+
   const columns = useMemo<ColumnDef<UseCaseData>[]>(
     () => [
       {
@@ -377,6 +390,46 @@ export default function UseCaseTable({
           />
         ),
         size: 50,
+      },
+      {
+        id: "contact",
+        header: () => (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "100%",
+              height: "100%",
+            }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              Contact
+            </Typography>
+          </Box>
+        ),
+        cell: ({ row }) => (
+          <Tooltip title="I'm interested — contact me" arrow>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleContactClick(row.original["AI Use Case"]);
+              }}
+              sx={{
+                color: PURE_ORANGE,
+                "&:hover": {
+                  backgroundColor: "#fff5f2",
+                  transform: "scale(1.1)",
+                },
+                transition: "all 0.2s ease",
+              }}
+            >
+              <MailOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        ),
+        size: 100,
       },
       {
         accessorKey: "Capability",
@@ -692,7 +745,7 @@ export default function UseCaseTable({
         },
       },
     ],
-    [expandedRows, CustomHeader, renderChips, toggleRowExpansion]
+    [expandedRows, CustomHeader, renderChips, toggleRowExpansion, handleContactClick]
   );
 
   const table = useReactTable({
@@ -983,6 +1036,12 @@ export default function UseCaseTable({
         multiselectColumns={multiselectColumns}
         getUniqueValues={getUniqueValues}
         tableContainerRef={tableContainerRef}
+      />
+      <ContactDialog
+        open={contactDialogOpen}
+        onClose={() => setContactDialogOpen(false)}
+        userEmail={userEmail}
+        subject={contactSubject}
       />
     </Box>
   );
