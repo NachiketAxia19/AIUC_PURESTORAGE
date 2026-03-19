@@ -362,52 +362,8 @@ export default function UseCaseTable({
   const columns = useMemo<ColumnDef<UseCaseData>[]>(
     () => [
       {
-        id: "select",
-        header: ({ table }) => (
-          <Checkbox
-            checked={table.getIsAllPageRowsSelected()}
-            indeterminate={table.getIsSomePageRowsSelected()}
-            onChange={table.getToggleAllPageRowsSelectedHandler()}
-            size="small"
-            sx={{
-              color: PURE_ORANGE,
-              "&.Mui-checked": { color: PURE_ORANGE },
-              "&.MuiCheckbox-indeterminate": { color: PURE_ORANGE },
-            }}
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            disabled={!row.getCanSelect()}
-            indeterminate={row.getIsSomeSelected()}
-            onChange={row.getToggleSelectedHandler()}
-            size="small"
-            sx={{
-              color: PURE_ORANGE,
-              "&.Mui-checked": { color: PURE_ORANGE },
-            }}
-          />
-        ),
-        size: 50,
-      },
-      {
         id: "contact",
-        header: () => (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              width: "100%",
-              height: "100%",
-            }}
-          >
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              Contact
-            </Typography>
-          </Box>
-        ),
+        header: () => null,
         cell: ({ row }) => (
           <Tooltip title="I'm interested — contact me" arrow>
             <IconButton
@@ -429,14 +385,14 @@ export default function UseCaseTable({
             </IconButton>
           </Tooltip>
         ),
-        size: 100,
+        size: 60,
       },
       {
         accessorKey: "Capability",
-        header: ({ column }) => <CustomHeader column={column} />,
+        header: () => null,
         meta: { headerName: "Capability" },
-        size: 170,
-        enableSorting: true,
+        size: 80,
+        enableSorting: false,
         cell: ({ row, getValue }) => {
           const rowId = row.original.id;
           return (
